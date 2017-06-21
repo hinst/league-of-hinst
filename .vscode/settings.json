@@ -1,0 +1,16 @@
+{
+    "go.buildOnSave": "workspace",
+    "go.lintOnSave": "workspace",
+    "go.vetOnSave": "off",
+    "go.buildFlags": [],
+    "go.lintFlags": [],
+    "go.vetFlags": [],
+    "go.lintTool": "gometalinter",
+    "go.useCodeSnippetsOnFunctionSuggest": false,
+    "go.formatOnSave": false,
+    "search.exclude": {
+        "**/.hg": true
+    },
+    "editor.tabSize": 4,
+    "editor.detectIndentation": true
+}
