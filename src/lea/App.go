@@ -31,8 +31,8 @@ func (this *TApp) ReadConfig() {
 
 func (this *TApp) RequestSessions() {
 	var url = this.Config.RootURL +
-		"/api/lol/ru/v2.2/matchlist/by-summoner/" +
-		this.Config.SummonerId +
+		"lol/match/v3/matchlists/by-account/" +
+		this.Config.AccountId +
 		"?api_key=" + this.Config.ApiKey
 	var text = this.Get(url)
 }
