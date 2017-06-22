@@ -9,4 +9,5 @@ func main() {
 	fmt.Println("STARTING...")
 	var app = (&lea.TApp{}).Create()
 	app.Run()
+	fmt.Println("EXITING...")
 }
