@@ -35,13 +35,10 @@ func (this *TApp) RequestSessions() {
 		this.Config.SummonerId +
 		"?api_key=" + this.Config.ApiKey
 	var text = this.Get(url)
-	WriteLog(string(text))
 }
 
 func (this *TApp) GetResponse(url string) *http.Response {
-	if false {
 		WriteLog("Get " + url)
-	}
 	var response, responseResult = http.Get(url)
 	AssertResult(responseResult)
 	return response
