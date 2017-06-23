@@ -6,7 +6,7 @@
     "go.lintFlags": [],
     "go.vetFlags": [],
     "go.useCodeSnippetsOnFunctionSuggest": false,
-    "go.formatOnSave": false,
+    "go.formatOnSave": true,
     "search.exclude": {
         "**/.hg": true
     },

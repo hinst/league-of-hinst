@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"goriot"
 )
 
 type TApp struct {
@@ -16,7 +17,7 @@ func (this *TApp) Create() *TApp {
 
 func (this *TApp) Run() {
 	this.ReadConfig()
-	this.RequestSessions()
+	var sessions = this.RequestSessions()
 }
 
 func (this *TApp) ReadConfig() {
@@ -29,12 +30,18 @@ func (this *TApp) ReadConfig() {
 	WriteLog("RootURL: " + this.Config.RootURL)
 }
 
-func (this *TApp) RequestSessions() {
+func (this *TApp) RequestSessions() *goriot.PlayerHistory {
 	var url = this.Config.RootURL +
-		"lol/match/v3/matchlists/by-account/" +
-		this.Config.AccountId +
+		"lol/match/v3/matchlists/by-account/" + this.Config.AccountId +
 		"?api_key=" + this.Config.ApiKey
 	var text = this.Get(url)
+	var sessionList goriot.PlayerHistory
+	json.Unmarshal(text, &sessionList)
+	return &sessionList
+}
+
+func (this *TApp) RequestSession() {
+	
 }
 
 func (this *TApp) GetResponse(url string) *http.Response {
