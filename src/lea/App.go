@@ -4,14 +4,19 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"strconv"
+	"sync/atomic"
+	"time"
 )
 
 type TApp struct {
+	active int32
 	Config *TConfig
 }
 
 func (this *TApp) Create() *TApp {
+	this.active = 1
 	return this
 }
 
@@ -20,6 +25,14 @@ func (this *TApp) Run() {
 	var sessions = this.RequestSessions()
 	var relevantSessions = this.GetRelevantSessions(sessions.Sessions)
 	WriteLog("Got sessions " + strconv.Itoa(len(sessions.Sessions)) + " -> " + strconv.Itoa(len(relevantSessions)))
+	for sessionIndex, session := range sessions.Sessions {
+		WriteLog("Loading session " + strconv.Itoa(sessionIndex) + "/" + strconv.Itoa(len(sessions.Sessions)) + "...")
+		this.LoadSessionFileToDisk(session.GameId)
+		time.Sleep(2 * time.Second)
+		if false == this.GetActive() {
+			break
+		}
+	}
 }
 
 func (this *TApp) ReadConfig() {
@@ -71,4 +84,23 @@ func (this *TApp) GetRelevantSessions(a []TSessionStruct) (result []TSessionStru
 		}
 	}
 	return
+}
+
+func (this *TApp) LoadSessionFileToDisk(gameId int) {
+	var data = this.RequestSessionRaw(gameId)
+	var filePath = "data/" + strconv.Itoa(gameId) + ".json"
+	var writeFileResult = ioutil.WriteFile(filePath, data, os.ModePerm)
+	AssertResult(writeFileResult)
+}
+
+func (this *TApp) SetActive(a bool) {
+	if a {
+		atomic.StoreInt32(&this.active, 1)
+	} else {
+		atomic.StoreInt32(&this.active, 0)
+	}
+}
+
+func (this *TApp) GetActive() bool {
+	return atomic.LoadInt32(&this.active) > 0
 }
