@@ -11,8 +11,9 @@ import (
 )
 
 type TApp struct {
-	active int32
-	Config *TConfig
+	active    int32
+	Config    *TConfig
+	AccountId int
 }
 
 func (this *TApp) Create() *TApp {
@@ -35,6 +36,7 @@ func (this *TApp) ReadConfig() {
 	AssertResult(decodeResult)
 	this.Config = config
 	WriteLog("RootURL: " + this.Config.RootURL)
+	this.AccountId, _ = strconv.Atoi(this.Config.AccountId)
 }
 
 func (this *TApp) RequestSessions() *TSessionStructs {
@@ -141,10 +143,16 @@ func (this *TApp) AnalyzeSorakaWounds(details []TSessionDetail) {
 	var countOfSeasonRanked = len(details)
 	WriteLog("& In this season: " + strconv.Itoa(countOfSeasonRanked))
 	details = FilterSessionDetail(details, func(a TSessionDetail) bool {
-		var accountId, _ = strconv.Atoi(this.Config.AccountId)
-		return a.FindChampionId(accountId) == SorakaChampId_v7
+		return a.FindChampionId(this.AccountId) == SorakaChampId_v7
 	})
 	var countOfSeasonRankedSoraka = len(details)
-	var sorakaRatio = float32(countOfSeasonRankedSoraka) / float32(countOfSeasonRanked) * 100
-	WriteLog("& Me=Soraka: " + strconv.Itoa(len(details)) + " " + strconv.Itoa(int(sorakaRatio)) + "%")
+	var baseCount = countOfSeasonRankedSoraka
+	var sorakaRatio = float32(countOfSeasonRankedSoraka) / float32(countOfSeasonRanked)
+	WriteLog("& Me=Soraka: " + strconv.Itoa(len(details)) + " " + strconv.Itoa(int(sorakaRatio*100)) + "%")
+	var countOfWins = len(
+		FilterSessionDetail(details, func(a TSessionDetail) bool {
+			return a.CheckWinByAccount(this.AccountId)
+		}))
+	var winRatio = float32(countOfWins) / float32(baseCount)
+	WriteLog("Wins: " + IntToStr(countOfWins) + " " + IntToStr(int(winRatio*100)) + "%")
 }

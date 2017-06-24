@@ -27,7 +27,7 @@ type TSessionDetailParticipant struct {
 }
 
 type TSessionDetailStats struct {
-	Win string `json:"win"`
+	Win bool `json:"win"`
 
 	Item0 int `json:"item0"`
 	Item1 int `json:"item1"`
@@ -81,6 +81,51 @@ func (this *TSessionDetail) FindParticipantById(participantId int) (result *TSes
 			result = &item
 			break
 		}
+	}
+	return
+}
+
+func (this *TSessionDetail) FindParticipantByAccountId(accountId int) (result *TSessionDetailParticipant) {
+	var pi = this.FindParticipantIdentity(accountId)
+	if pi != nil {
+		result = this.FindParticipantById(pi.ParticipantId)
+	}
+	return
+}
+
+func (this *TSessionDetail) CheckWinByAccount(accountId int) (result bool) {
+	var p = this.FindParticipantByAccountId(accountId)
+	if p != nil {
+		result = p.Stats.Win
+	}
+	return
+}
+
+func (this *TSessionDetail) FindTeamParticipants(accountId int, opposite bool) (result []TSessionDetailParticipant) {
+	var p = this.FindParticipantByAccountId(accountId)
+	if p != nil {
+		for _, item := range this.Participants {
+			if false == opposite {
+				if item.TeamId == p.TeamId {
+					result = append(result, item)
+				}
+			} else {
+				if item.TeamId != p.TeamId {
+					result = append(result, item)
+				}
+			}
+		}
+	}
+	return
+}
+
+func (this *TSessionDetailStats) GetItems() []int {
+	return []int{this.Item0, this.Item1, this.Item2, this.Item3, this.Item4, this.Item5, this.Item6}
+}
+
+func (this *TSessionDetail) GetItems() (result []int) {
+	for _, participant := range this.Participants {
+		result = append(result, participant.Stats.GetItems()...)
 	}
 	return
 }
