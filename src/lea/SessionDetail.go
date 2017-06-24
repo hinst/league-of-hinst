@@ -137,3 +137,7 @@ func (this *TSessionDetail) GetTeamItems(accountId int, myTeam bool) (result []i
 	}
 	return
 }
+
+func (this *TSessionDetail) GetGameDurationInMinutes() int {
+	return this.GameDuration / 60
+}
