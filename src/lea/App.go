@@ -22,7 +22,9 @@ func (this *TApp) Create() *TApp {
 
 func (this *TApp) Run() {
 	this.ReadConfig()
-	//this.LoadSessionsToDisk()
+	var sessions = this.LoadSessionsToDisk()
+	var sessionDetails = this.LoadSessionsFromDisk(sessions.Sessions)
+	this.AnalyzeSorakaWounds(sessionDetails)
 }
 
 func (this *TApp) ReadConfig() {
@@ -95,7 +97,7 @@ func (this *TApp) GetActive() bool {
 	return atomic.LoadInt32(&this.active) > 0
 }
 
-func (this *TApp) LoadSessionsToDisk() {
+func (this *TApp) LoadSessionsToDisk() *TSessionStructs {
 	var sessions = this.RequestSessions()
 	for sessionIndex, session := range sessions.Sessions {
 		if false == CheckFileExists(this.GetSessionFilePath(session.GameId)) {
@@ -107,8 +109,42 @@ func (this *TApp) LoadSessionsToDisk() {
 			break
 		}
 	}
+	return sessions
 }
 
 func (this *TApp) GetSessionFilePath(gameId int) string {
 	return "data/" + strconv.Itoa(gameId) + ".json"
+}
+
+func (this *TApp) LoadSessionsFromDisk(sessions []TSessionStruct) (result []TSessionDetail) {
+	result = make([]TSessionDetail, 0, len(sessions))
+	for _, session := range sessions {
+		var filePath = this.GetSessionFilePath(session.GameId)
+		var data, readFileResult = ioutil.ReadFile(filePath)
+		AssertResult(readFileResult)
+		var sessionDetail TSessionDetail
+		json.Unmarshal(data, &sessionDetail)
+		result = append(result, sessionDetail)
+	}
+	return
+}
+
+func (this *TApp) AnalyzeSorakaWounds(details []TSessionDetail) {
+	WriteLog("Total sessions: " + strconv.Itoa(len(details)))
+	details = FilterSessionDetail(details, func(a TSessionDetail) bool {
+		return a.GameType == "MATCHED_GAME"
+	})
+	WriteLog("& Ranked: " + strconv.Itoa(len(details)))
+	details = FilterSessionDetail(details, func(a TSessionDetail) bool {
+		return a.SeasonId == 8
+	})
+	var countOfSeasonRanked = len(details)
+	WriteLog("& In this season: " + strconv.Itoa(countOfSeasonRanked))
+	details = FilterSessionDetail(details, func(a TSessionDetail) bool {
+		var accountId, _ = strconv.Atoi(this.Config.AccountId)
+		return a.FindChampionId(accountId) == SorakaChampId_v7
+	})
+	var countOfSeasonRankedSoraka = len(details)
+	var sorakaRatio = float32(countOfSeasonRankedSoraka) / float32(countOfSeasonRanked) * 100
+	WriteLog("& Me=Soraka: " + strconv.Itoa(len(details)) + " " + strconv.Itoa(int(sorakaRatio)) + "%")
 }
