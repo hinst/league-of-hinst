@@ -149,10 +149,87 @@ func (this *TApp) AnalyzeSorakaWounds(details []TSessionDetail) {
 	var baseCount = countOfSeasonRankedSoraka
 	var sorakaRatio = float32(countOfSeasonRankedSoraka) / float32(countOfSeasonRanked)
 	WriteLog("& Me=Soraka: " + strconv.Itoa(len(details)) + " " + strconv.Itoa(int(sorakaRatio*100)) + "%")
-	var countOfWins = len(
-		FilterSessionDetail(details, func(a TSessionDetail) bool {
-			return a.CheckWinByAccount(this.AccountId)
-		}))
-	var winRatio = float32(countOfWins) / float32(baseCount)
-	WriteLog("Wins: " + IntToStr(countOfWins) + " " + IntToStr(int(winRatio*100)) + "%")
+
+	var fReport = func(text string, f func(a TSessionDetail) bool) []TSessionDetail {
+		var filtered = FilterSessionDetail(details, f)
+		var count = len(filtered)
+		var ratio = float32(count) / float32(baseCount)
+		WriteLog(text + ": " + IntToStr(count) + " " + IntToStr(int(ratio*100)) + "%")
+		return filtered
+	}
+
+	fReport("Wins", func(a TSessionDetail) bool {
+		return a.CheckWinByAccount(this.AccountId)
+	})
+	WriteLog("")
+	fReport("Had either of Executioner, Mortal or Morello", func(a TSessionDetail) bool {
+		var items = a.GetItems()
+		return CheckIntArrayContains(items, ExecutionerItemId_v7) ||
+			CheckIntArrayContains(items, MortalItemId_v7) ||
+			CheckIntArrayContains(items, MorelloItemId_v7)
+	})
+	fReport("Had either of Executioner or Mortal", func(a TSessionDetail) bool {
+		var items = a.GetItems()
+		return CheckIntArrayContains(items, ExecutionerItemId_v7) ||
+			CheckIntArrayContains(items, MortalItemId_v7)
+	})
+
+	WriteLog("")
+	var countOfTrifectaMyTeam = len(FilterSessionDetail(details, func(a TSessionDetail) bool {
+		var items = a.GetTeamItems(this.AccountId, true)
+		return CheckIntArrayContains(items, ExecutionerItemId_v7) ||
+			CheckIntArrayContains(items, MortalItemId_v7) ||
+			CheckIntArrayContains(items, MorelloItemId_v7)
+	}))
+	var countOfTrifectaEnemyTeam = len(FilterSessionDetail(details, func(a TSessionDetail) bool {
+		var items = a.GetTeamItems(this.AccountId, false)
+		return CheckIntArrayContains(items, ExecutionerItemId_v7) ||
+			CheckIntArrayContains(items, MortalItemId_v7) ||
+			CheckIntArrayContains(items, MorelloItemId_v7)
+	}))
+	WriteLog("Had Ex-er, Mortal or Morello on: my team " + IntToStr(countOfTrifectaMyTeam) + ", enemy team " + IntToStr(countOfTrifectaEnemyTeam))
+
+	var countOfExerMyTeam = len(FilterSessionDetail(details, func(a TSessionDetail) bool {
+		var items = a.GetTeamItems(this.AccountId, true)
+		return CheckIntArrayContains(items, ExecutionerItemId_v7) ||
+			CheckIntArrayContains(items, MortalItemId_v7)
+	}))
+	var countOfExerEnemyTeam = len(FilterSessionDetail(details, func(a TSessionDetail) bool {
+		var items = a.GetTeamItems(this.AccountId, false)
+		return CheckIntArrayContains(items, ExecutionerItemId_v7) ||
+			CheckIntArrayContains(items, MortalItemId_v7)
+	}))
+	WriteLog("Had Ex-er or Mortal on: my team " + IntToStr(countOfExerMyTeam) + ", enemy team " + IntToStr(countOfExerEnemyTeam))
+
+	WriteLog("")
+	var winsVersusExer = len(FilterSessionDetail(details, func(a TSessionDetail) bool {
+		var items = a.GetTeamItems(this.AccountId, false)
+		var hadExer = CheckIntArrayContains(items, ExecutionerItemId_v7) || CheckIntArrayContains(items, MortalItemId_v7)
+		return hadExer && a.CheckWinByAccount(this.AccountId)
+	}))
+	WriteLog("Wins against Ex-er or Mortal on enemy team " + IntToStr(winsVersusExer) + " of " + IntToStr(countOfExerEnemyTeam) + ", ratio=" + RatioToStr(winsVersusExer, countOfExerEnemyTeam) + "%")
+
+	var winsWithExer = len(FilterSessionDetail(details, func(a TSessionDetail) bool {
+		var items = a.GetTeamItems(this.AccountId, true)
+		var hadExer = CheckIntArrayContains(items, ExecutionerItemId_v7) || CheckIntArrayContains(items, MortalItemId_v7)
+		return hadExer && a.CheckWinByAccount(this.AccountId)
+	}))
+	WriteLog("Wins with Ex-er or Mortal on my team " + IntToStr(winsWithExer) + " of " + IntToStr(countOfExerMyTeam) + ", ratio=" + RatioToStr(winsWithExer, countOfExerMyTeam) + "%")
+
+	WriteLog("")
+	var winsVersusTrifecta = len(FilterSessionDetail(details, func(a TSessionDetail) bool {
+		var items = a.GetTeamItems(this.AccountId, false)
+		var hadTrifecta = CheckIntArrayContains(items, ExecutionerItemId_v7) || CheckIntArrayContains(items, MortalItemId_v7) || CheckIntArrayContains(items, MorelloItemId_v7)
+		return hadTrifecta && a.CheckWinByAccount(this.AccountId)
+	}))
+	WriteLog("Wins against trifecta on enemy team " + IntToStr(winsVersusTrifecta) + " of " + IntToStr(countOfTrifectaEnemyTeam) + ", ratio=" + RatioToStr(winsVersusTrifecta, countOfTrifectaEnemyTeam) + "%")
+
+	var winsWithTrifecta = len(FilterSessionDetail(details, func(a TSessionDetail) bool {
+		var items = a.GetTeamItems(this.AccountId, true)
+		var hadTrifecta = CheckIntArrayContains(items, ExecutionerItemId_v7) || CheckIntArrayContains(items, MortalItemId_v7) || CheckIntArrayContains(items, MorelloItemId_v7)
+		return hadTrifecta && a.CheckWinByAccount(this.AccountId)
+	}))
+	WriteLog("Wins with trifecta on my team " + IntToStr(winsWithTrifecta) + " of " + IntToStr(countOfTrifectaMyTeam) + ", ratio=" + RatioToStr(winsWithTrifecta, countOfTrifectaMyTeam) + "%")
+	WriteLog("Where trifecta = having either Executioner, Mortal or Morello.")
+
 }

@@ -7,4 +7,5 @@ func CheckIntArrayContains(a []int, value int) (result bool) {
 			break
 		}
 	}
+	return
 }

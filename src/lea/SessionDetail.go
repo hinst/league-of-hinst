@@ -101,11 +101,11 @@ func (this *TSessionDetail) CheckWinByAccount(accountId int) (result bool) {
 	return
 }
 
-func (this *TSessionDetail) FindTeamParticipants(accountId int, opposite bool) (result []TSessionDetailParticipant) {
+func (this *TSessionDetail) FindTeamParticipants(accountId int, myTeam bool) (result []TSessionDetailParticipant) {
 	var p = this.FindParticipantByAccountId(accountId)
 	if p != nil {
 		for _, item := range this.Participants {
-			if false == opposite {
+			if myTeam {
 				if item.TeamId == p.TeamId {
 					result = append(result, item)
 				}
@@ -125,6 +125,14 @@ func (this *TSessionDetailStats) GetItems() []int {
 
 func (this *TSessionDetail) GetItems() (result []int) {
 	for _, participant := range this.Participants {
+		result = append(result, participant.Stats.GetItems()...)
+	}
+	return
+}
+
+func (this *TSessionDetail) GetTeamItems(accountId int, myTeam bool) (result []int) {
+	var participants = this.FindTeamParticipants(accountId, myTeam)
+	for _, participant := range participants {
 		result = append(result, participant.Stats.GetItems()...)
 	}
 	return
