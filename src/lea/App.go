@@ -22,17 +22,7 @@ func (this *TApp) Create() *TApp {
 
 func (this *TApp) Run() {
 	this.ReadConfig()
-	var sessions = this.RequestSessions()
-	var relevantSessions = this.GetRelevantSessions(sessions.Sessions)
-	WriteLog("Got sessions " + strconv.Itoa(len(sessions.Sessions)) + " -> " + strconv.Itoa(len(relevantSessions)))
-	for sessionIndex, session := range sessions.Sessions {
-		WriteLog("Loading session " + strconv.Itoa(sessionIndex) + "/" + strconv.Itoa(len(sessions.Sessions)) + "...")
-		this.LoadSessionFileToDisk(session.GameId)
-		time.Sleep(2 * time.Second)
-		if false == this.GetActive() {
-			break
-		}
-	}
+	//this.LoadSessionsToDisk()
 }
 
 func (this *TApp) ReadConfig() {
@@ -88,7 +78,7 @@ func (this *TApp) GetRelevantSessions(a []TSessionStruct) (result []TSessionStru
 
 func (this *TApp) LoadSessionFileToDisk(gameId int) {
 	var data = this.RequestSessionRaw(gameId)
-	var filePath = "data/" + strconv.Itoa(gameId) + ".json"
+	var filePath = this.GetSessionFilePath(gameId)
 	var writeFileResult = ioutil.WriteFile(filePath, data, os.ModePerm)
 	AssertResult(writeFileResult)
 }
@@ -103,4 +93,22 @@ func (this *TApp) SetActive(a bool) {
 
 func (this *TApp) GetActive() bool {
 	return atomic.LoadInt32(&this.active) > 0
+}
+
+func (this *TApp) LoadSessionsToDisk() {
+	var sessions = this.RequestSessions()
+	for sessionIndex, session := range sessions.Sessions {
+		if false == CheckFileExists(this.GetSessionFilePath(session.GameId)) {
+			WriteLog("Loading session " + strconv.Itoa(sessionIndex) + "/" + strconv.Itoa(len(sessions.Sessions)) + "...")
+			this.LoadSessionFileToDisk(session.GameId)
+			time.Sleep(2 * time.Second)
+		}
+		if false == this.GetActive() {
+			break
+		}
+	}
+}
+
+func (this *TApp) GetSessionFilePath(gameId int) string {
+	return "data/" + strconv.Itoa(gameId) + ".json"
 }
