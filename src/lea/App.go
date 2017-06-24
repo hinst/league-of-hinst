@@ -148,7 +148,7 @@ func (this *TApp) AnalyzeSorakaWounds(details []TSessionDetail) {
 	var countOfSeasonRankedSoraka = len(details)
 	var baseCount = countOfSeasonRankedSoraka
 	var sorakaRatio = float32(countOfSeasonRankedSoraka) / float32(countOfSeasonRanked)
-	WriteLog("& Me=Soraka: " + strconv.Itoa(len(details)) + " " + strconv.Itoa(int(sorakaRatio*100)) + "%")
+	WriteLog("& Me=Soraka: " + strconv.Itoa(len(details)) + " " + strconv.Itoa(int(sorakaRatio*100)) + "% ; everything below only considers games where me=Soraka")
 
 	var fReport = func(text string, f func(a TSessionDetail) bool) []TSessionDetail {
 		var filtered = FilterSessionDetail(details, f)
@@ -158,7 +158,7 @@ func (this *TApp) AnalyzeSorakaWounds(details []TSessionDetail) {
 		return filtered
 	}
 
-	fReport("Wins", func(a TSessionDetail) bool {
+	fReport("Me as Soraka wins", func(a TSessionDetail) bool {
 		return a.CheckWinByAccount(this.AccountId)
 	})
 	WriteLog("")
@@ -188,6 +188,7 @@ func (this *TApp) AnalyzeSorakaWounds(details []TSessionDetail) {
 			CheckIntArrayContains(items, MorelloItemId_v7)
 	}))
 	WriteLog("Had Ex-er, Mortal or Morello on: my team " + IntToStr(countOfTrifectaMyTeam) + ", enemy team " + IntToStr(countOfTrifectaEnemyTeam))
+	var countOfTrifectalessEnemy = baseCount - countOfTrifectaEnemyTeam
 
 	var countOfExerMyTeam = len(FilterSessionDetail(details, func(a TSessionDetail) bool {
 		var items = a.GetTeamItems(this.AccountId, true)
@@ -200,21 +201,7 @@ func (this *TApp) AnalyzeSorakaWounds(details []TSessionDetail) {
 			CheckIntArrayContains(items, MortalItemId_v7)
 	}))
 	WriteLog("Had Ex-er or Mortal on: my team " + IntToStr(countOfExerMyTeam) + ", enemy team " + IntToStr(countOfExerEnemyTeam))
-
-	WriteLog("")
-	var winsVersusExer = len(FilterSessionDetail(details, func(a TSessionDetail) bool {
-		var items = a.GetTeamItems(this.AccountId, false)
-		var hadExer = CheckIntArrayContains(items, ExecutionerItemId_v7) || CheckIntArrayContains(items, MortalItemId_v7)
-		return hadExer && a.CheckWinByAccount(this.AccountId)
-	}))
-	WriteLog("Wins against Ex-er or Mortal on enemy team " + IntToStr(winsVersusExer) + " of " + IntToStr(countOfExerEnemyTeam) + ", ratio=" + RatioToStr(winsVersusExer, countOfExerEnemyTeam) + "%")
-
-	var winsWithExer = len(FilterSessionDetail(details, func(a TSessionDetail) bool {
-		var items = a.GetTeamItems(this.AccountId, true)
-		var hadExer = CheckIntArrayContains(items, ExecutionerItemId_v7) || CheckIntArrayContains(items, MortalItemId_v7)
-		return hadExer && a.CheckWinByAccount(this.AccountId)
-	}))
-	WriteLog("Wins with Ex-er or Mortal on my team " + IntToStr(winsWithExer) + " of " + IntToStr(countOfExerMyTeam) + ", ratio=" + RatioToStr(winsWithExer, countOfExerMyTeam) + "%")
+	var countOfExerlessEnemy = baseCount - countOfExerEnemyTeam
 
 	WriteLog("")
 	var winsVersusTrifecta = len(FilterSessionDetail(details, func(a TSessionDetail) bool {
@@ -231,5 +218,33 @@ func (this *TApp) AnalyzeSorakaWounds(details []TSessionDetail) {
 	}))
 	WriteLog("Wins with trifecta on my team " + IntToStr(winsWithTrifecta) + " of " + IntToStr(countOfTrifectaMyTeam) + ", ratio=" + RatioToStr(winsWithTrifecta, countOfTrifectaMyTeam) + "%")
 	WriteLog("Where trifecta = having either Executioner, Mortal or Morello.")
+	var winsVersusTrifectless = len(FilterSessionDetail(details, func(a TSessionDetail) bool {
+		var items = a.GetTeamItems(this.AccountId, false)
+		var hadTrifecta = CheckIntArrayContains(items, ExecutionerItemId_v7) || CheckIntArrayContains(items, MortalItemId_v7) || CheckIntArrayContains(items, MorelloItemId_v7)
+		return false == hadTrifecta && a.CheckWinByAccount(this.AccountId)
+	}))
+	WriteLog("Wins agains trifectaless enemy: " + IntToStr(winsVersusTrifectless) + " of " + IntToStr(countOfTrifectalessEnemy) + " ratio=" + RatioToStr(winsVersusTrifectless, countOfTrifectalessEnemy) + "%" +
+		" delta=" + IntToStr(winsVersusTrifectless-countOfTrifectalessEnemy/2))
 
+	WriteLog("")
+	var winsVersusExer = len(FilterSessionDetail(details, func(a TSessionDetail) bool {
+		var items = a.GetTeamItems(this.AccountId, false)
+		var hadExer = CheckIntArrayContains(items, ExecutionerItemId_v7) || CheckIntArrayContains(items, MortalItemId_v7)
+		return hadExer && a.CheckWinByAccount(this.AccountId)
+	}))
+	WriteLog("Wins against Ex-er or Mortal on enemy team " + IntToStr(winsVersusExer) + " of " + IntToStr(countOfExerEnemyTeam) + ", ratio=" + RatioToStr(winsVersusExer, countOfExerEnemyTeam) + "%")
+	var winsWithExer = len(FilterSessionDetail(details, func(a TSessionDetail) bool {
+		var items = a.GetTeamItems(this.AccountId, true)
+		var hadExer = CheckIntArrayContains(items, ExecutionerItemId_v7) || CheckIntArrayContains(items, MortalItemId_v7)
+		return hadExer && a.CheckWinByAccount(this.AccountId)
+	}))
+	WriteLog("Wins with Ex-er or Mortal on my team " + IntToStr(winsWithExer) + " of " + IntToStr(countOfExerMyTeam) + ", ratio=" + RatioToStr(winsWithExer, countOfExerMyTeam) + "%")
+	var winsVersusExerless = len(FilterSessionDetail(details, func(a TSessionDetail) bool {
+		var items = a.GetTeamItems(this.AccountId, false)
+		var hadTrifecta = CheckIntArrayContains(items, ExecutionerItemId_v7) || CheckIntArrayContains(items, MortalItemId_v7)
+		return false == hadTrifecta && a.CheckWinByAccount(this.AccountId)
+	}))
+	WriteLog("Win agains exerless enemy: " + IntToStr(winsVersusExerless) + " of " + IntToStr(countOfExerlessEnemy) + " ratio=" + RatioToStr(winsVersusExerless, countOfExerlessEnemy) + "%" +
+		" delta=" + IntToStr(winsVersusExerless-countOfExerlessEnemy/2))
+	WriteLog("Where exerless means: had neither of: Executioner, Mortal")
 }
